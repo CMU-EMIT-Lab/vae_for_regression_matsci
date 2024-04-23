@@ -49,13 +49,6 @@ Data augmentation strategies can be found in the dataloader.py file. Note that t
 
 ## Training your own model
 
-To obtain a training and testing set, you will first want to run
-
-```shell
-python filesplit.py
-```
-
-You will then want to modify the hyperparameters used for the model. This can be done by changing the hyperparameters dictionary variable in train_vae_regression.py.
 
 You can then train a new model by running
 
