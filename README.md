@@ -37,8 +37,6 @@ In dataloader.py, in the self.file_list variable you will have to change how the
 
 In train_vae_regression.py, you will need to change the files variable
 
-In filesplit.py, you will need to change the files variable to update the glob string.
-
 Glob strings are very similar to regex. To learn the modifier characters, we recommend you look at this link: https://www.malikbrowne.com/blog/a-beginners-guide-glob-patterns/
 
 
