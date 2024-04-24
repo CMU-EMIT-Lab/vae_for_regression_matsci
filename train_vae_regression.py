@@ -1,17 +1,25 @@
+"""
+Created by William J. Frieden Templeton & Justin P. Miner
+Institution: Carnegie Mellon University
+Date: April 24, 2024
+
+Some notes up top: 
+- Running "python3 train_vae_regression.py --test" will run the MNIST dataset as it is loaded in the folder.
+- This script will create subdirectories wherever it is placed for model saving
+- To visually watch progress, go to the subfolder and open "trial.jpg" to see the final image of the training iteration
+"""
+
 from dataloader import TRSDataset, transform, transform_test
-import torch
-import tqdm
 from model import VAE_Regression, VAE_Classic, loss_regression, loss_classic 
 from utils import EarlyStop
-import time
-import glob
-from sklearn.model_selection import train_test_split
+
+import torch
+import tqdm
 import numpy as np
+from sklearn.model_selection import train_test_split
 from datetime import datetime
-import os
 import matplotlib.pyplot as plt
-import warnings
-import copy
+import warnings, argparse, copy, os, glob, time
 from itertools import product
 warnings.filterwarnings("ignore", category=UserWarning) 
 
@@ -144,87 +152,79 @@ def train_vae(data_dir, net, save_name, optimizer, train_data, train_iter, val_d
     np.savetxt(f'{data_dir}/val_hist.txt', val_hist)
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Run VAE model with specified parameters and dataset")
+    # parser.add_argument("--model", type=str, default="Regression", help="Type of VAE model: 'Regression' or 'Classic'")
+    parser.add_argument("--help_option", action="store_true", help="Display help text")
+    parser.add_argument("--test",action="store_true", help="Run Model on MNIST Dataset")
+    parser.add_argument("--root_dir", type=str, default="your_data", help="Directory containing image files (Default is MNIST)")
+
+    parser.add_argument("--ls", type=int, default=3, help="Size of latent space (Default is 3, recommend 32 for non-MNIST data)")
+    parser.add_argument("--lr", type=float, default=1e-4, help="Learning Rate (Default is 1e-4)")
+    parser.add_argument("--bs", type=int, default=128, help="Batch Size (Default is 128)")
+    parser.add_argument("--px", type=int, default=128, help="Image Size (Default is 128)")
+    
+    args = parser.parse_args()
+    
+    if args.help_option:
+        parser.print_help()
+        exit()
+    
     # Pulling datetime to create serial number
     sn = datetime.now()
-    sn = sn.strftime("%Y%m%d%H%M%s")
-
-    #Derived from https://github.com/QingyuZhao/VAE-for-Regression
-    #https://arxiv.org/abs/1904.05948
-
+    sn = sn.strftime("%Y%m%d%H%M%S")  # Changed %s to %S for correct second formatting
+    
     hyperparameters = {
-        'px':[128],
-        'bs':[128],
-        'lr':[1e-4],
+        'px':[args.px],
+        'bs':[args.bs],
+        'lr':[args.lr],
         'wd':[4e-5],
-        'ls':[32]
-        # 'ls': [8]
+        'ls':[args.ls]
     }
-
-    root_dir = 'EP_Data_90overlap_removed'
-    files = glob.glob(f'{root_dir}/533_*/*.jpg', recursive=True)
-#
-    # root_dir = 'fatigue_900'
-    # files = glob.glob(f'{root_dir}/*/*.png')
+    
+    if args.test:
+        print("Running in test mode with MNIST dataset.")
+        # Load MNIST or handle it accordingly here
+        # Setup MNIST specific parameters or defaults
+        files = glob.glob(f'MNIST/*/*.png', recursive=True)  # This would be your dataset loading logic
+        root_dir = "MNIST"
+    else:
+        print(f"Running with custom dataset from {args.root_dir}.")
+        files = glob.glob(f'{args.root_dir}/*/*.png', recursive=True) #<------ FILE TYPE OF IMAGE
+        root_dir = args.root_dir
 
     for params in list(product(*hyperparameters.values())):
-
-        model_type = "Regression"
-        if model_type == "Regression":
-            VAE = VAE_Regression
-            loss = loss_regression
-        else:
-            VAE = VAE_Classic
-            loss = loss_classic
-
-        #Defines the data directory
         px, bs, lr, wd, ls = params
-        
-        data_dir = f"{root_dir}_{sn}_{model_type}_533Mpa_px{int(px)}_bs{int(bs)}_lr{int(lr*1e6)}x1e6_wd{int(wd*1e4)}x1e4_ls{int(ls)}"
-        os.makedirs(data_dir)
+        print(f"image_size={px}\nbatch_size={bs} \nlearning_rate={lr} \nlatent_space={ls}")
+    VAE = VAE_Regression
+    loss = loss_regression
 
-        #Gets all of the property values
-        nums = []
-        for file in files:
-            num = file.split('/')[1]
-            num = int(num.split('_')[1])
-            num = int(num)
-            nums.append(num)
+    data_dir = f"{root_dir}_{sn}_Regression_533Mpa_px{int(px)}_bs{int(bs)}_lr{int(lr*1e6)}x1e6_wd{int(wd*1e4)}x1e4_ls{int(ls)}"
+    os.makedirs(data_dir, exist_ok=True)
+    
+    """ IMPORTANT
+    So this nums is rather important, as it should be the property value we are regressing.
+    The folder structure should be: DATA PARENT FOLDER / PROPERTY VALUE / IMAGES
+    If the subfolders with property values are compltex (i.e., "MYDATA_4123MPA), alter nums HERE to extract just the number, AND nums in dataloader.py
+    """ 
+    # nums = [int(file.split('/')[1].split('_')[1]) for file in files]
+    nums = [int(file.split('/')[1]) for file in files]
 
-        #Determines mean and std (for normalization)
-        predmean = np.mean(nums)
-        predstd = np.std(nums)
+    #Determines mean and std (for normalization)
+    predmean = np.mean(nums)
+    predstd = np.std(nums)
 
-        #Splits files to record training and testing
-        files_train, files_test = train_test_split(files, test_size = 0.1, random_state=1)
+    #Splits files to record training and testing
+    files_train, files_test = train_test_split(files, test_size=0.1, random_state=1)
+    print(f'Loaded {len(files)} files, split {len(files_train)} for training, {len(files_test)} for testing')
 
-        files_train = np.array(files_train)
-        files_test = np.array(files_test)
+    np.save(f'{data_dir}/files_test.npy', files_test)
+    np.save(f'{data_dir}/files_train.npy', files_train)
 
-        print(f'Loaded {len(files)} files')
-        print(f'Split {len(files_train)} for training')
-        print(f'Split {len(files_test)} for testing')
+    train_data, train_iter, val_data, val_iter = dataloader(files_train, files_test, predmean, predstd, bs)
 
-        np.save(f'{data_dir}/files_test.npy', files_test)
-        np.save(f'{data_dir}/files_train.npy', files_train)
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    net = VAE(shape=(1, px, px), nhid=ls, device=device)
+    net.to(device)
 
-        train_data, train_iter, val_data, val_iter = dataloader(files_train, files_test, predmean, predstd, bs)
-
-        # Visualizing the 9 images
-        visualize_grid(train_iter, data_dir)
-
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        # device = torch.device('cpu')
-
-        #Initialize VAE Regression Model
-        net = VAE(shape=(1, px, px), nhid = ls, device = device)
-        net.to(device)
-        # print(summary(net, (1,256,256), device = device))
-        save_name = f"{data_dir}/VAE_regression.pt"
-
-        #Learning rate
-        #Faster adam optimizer
-        print(lr)
-        print(wd)
-        optimizer = torch.optim.AdamW(filter(lambda p: p.requires_grad, net.parameters()), lr=lr, weight_decay=wd)
-        
-        train_vae(data_dir, net, save_name, optimizer, train_data, train_iter, val_data, val_iter)
+    optimizer = torch.optim.AdamW(filter(lambda p: p.requires_grad, net.parameters()), lr=lr, weight_decay=wd)
+    train_vae(data_dir, net, f"{data_dir}/VAE_regression.pt", optimizer, train_data, train_iter, val_data, val_iter)
