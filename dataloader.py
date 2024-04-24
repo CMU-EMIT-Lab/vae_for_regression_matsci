@@ -29,7 +29,7 @@ class TRSDataset(Dataset):
         count = 0
         for file in self.file_list:
             num = file.split('/')[1]
-            num = int(num.split('_')[1])
+            # num = int(num.split('_')[1])
             num = int(num)
             num = (num - predmean)/predstd
             if file.startswith('.'):
@@ -55,7 +55,7 @@ class TRSDataset(Dataset):
         ret, thresh = cv.threshold(blur, 150, 255, cv.THRESH_BINARY)
         # thresh = cv.adaptiveThreshold(thresh,255,cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY, 51, 12)
         image = PIL.Image.fromarray(thresh)
-        image = PIL.ImageOps.invert(image)
+        # image = PIL.ImageOps.invert(image)
         image = image.convert('1')
         
 
