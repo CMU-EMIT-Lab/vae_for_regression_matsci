@@ -36,6 +36,8 @@ Inside of the data subdirectory, folders should be named according to the proper
 In dataloader.py, in the self.file_list variable you will have to change how the numbers are read in
 
 In train_vae_regression.py, you will need to change the files variable
+### train_vae_regression.py has been updated to work with terminal commands
+#### change the --root_dir in the terminal or in the parser code to point to your directory
 
 Glob strings are very similar to regex. To learn the modifier characters, we recommend you look at this link: https://www.malikbrowne.com/blog/a-beginners-guide-glob-patterns/
 
