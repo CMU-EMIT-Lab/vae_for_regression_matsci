@@ -5,7 +5,8 @@ Pytorch Implementation for Variational Autoencoder with Regression for Materials
 
 This work was inspired by https://github.com/QingyuZhao/VAE-for-Regression 
 
-
+Full Article can be found here:
+https://doi.org/10.1016/j.commatsci.2024.113056
 
 ## Installing
 
