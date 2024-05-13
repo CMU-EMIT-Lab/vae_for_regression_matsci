@@ -75,8 +75,9 @@ Please use the following reference if you utilize this code.
   title={Expediting Structure-Property Analyses using Variational Autoencoders with Regression},
   author={Frieden Templeton, William and Miner, Justin P. and Ngo, Austin and Fitzwater, Lauren and Reddy, Tharun and Abranovic, Brandon and Prichard, Paul and Lewandowski, John J. and Narra, Sneha Prabha},
   journal={Computational Materials Science},
-  volume={},
-  pages={},
+  volume={242},
+  pages={113056},
   year={2024},
-  publisher={Elsevier}
+  publisher={Elsevier},
+  doi = {10.1016/j.commatsci.2024.113056}
 }
